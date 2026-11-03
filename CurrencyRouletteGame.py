@@ -1,4 +1,3 @@
-
 import random
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
