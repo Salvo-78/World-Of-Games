@@ -1,6 +1,5 @@
 import random
-
-# from live import difficulty  # Imports the difficulty variable from live.py
+# from live import difficulty imports the difficulty variable from live.py
 
 def get_guess_from_user(difficulty):
     """
