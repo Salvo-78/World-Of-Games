@@ -12,8 +12,7 @@ def generate_sequence(difficulty):
 
 
 def clear_screen():
-    # ANSI clear sequence works in most modern terminals.
-    # The Windows fallback uses the native terminal command.
+   
     if os.name == "nt":
         os.system("cls")
     else:
