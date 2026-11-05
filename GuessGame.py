@@ -2,10 +2,8 @@ import random
 # from live import difficulty imports the difficulty variable from live.py
 
 def get_guess_from_user(difficulty):
-    """
-    Prompts the user for a guess between 1 and difficulty (inclusive).
-    Repeats the prompt with 'wrong selection' if the input is invalid.
-    """
+# prompts the user for a guess between 1 and difficulty (inclusive), repeats the prompt with 'wrong selection' if the input is invalid.
+    
     while True:
         try:
             guess_input = input(f"Enter your guess (1-{difficulty}): ").strip()
@@ -31,14 +29,12 @@ def compare_results(guess, secret_number):
 
 
 def play(difficulty):
-    """
-    Generates a secret number, gets one valid guess,
-    compares them, and returns True (win) or False (loss).
-    """
+# generates a secret number, gets one valid guess, compares them, and returns True (win) or False (loss).
+    
     secret_number = random.randint(1, difficulty)
 
-    # Collect exactly one valid guess (invalid attempts do not count)
+    # collect exactly one valid guess (invalid attempts do not count)
     guess = get_guess_from_user(difficulty)
 
-    # Compare and return the result
+    # compare and return the result
     return compare_results(guess, secret_number)
