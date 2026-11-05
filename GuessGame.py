@@ -21,10 +21,8 @@ def get_guess_from_user(difficulty):
 
 
 def compare_results(guess, secret_number):
-    """
-    Compares the user's guess with the secret number.
-    Returns True if they match, False otherwise.
-    """
+# compares the user's guess with the secret number. returns True if they match, False otherwise.
+
     return guess == secret_number
 
 
