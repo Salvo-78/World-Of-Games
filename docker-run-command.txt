@@ -1,0 +1,36 @@
+World of Games - Scores Service
+
+The Docker image is built from the Dockerfile using Python 3.12.
+The image includes the Flask service, dependencies, and an initial
+score file located at /Scores.txt.
+
+The application starts through MainScores.py, listens on
+0.0.0.0:8777, and runs with debug mode disabled.
+
+Docker Compose commands:
+
+Build:
+docker compose build
+
+Start:
+docker compose up -d
+
+Stop:
+docker compose down
+
+Check status:
+docker compose ps
+
+View logs:
+docker compose logs scores
+
+Service URL:
+http://localhost:8777
+
+Direct Docker run command (without Compose):
+
+docker run -d --name world-of-games-scores -p 8777:8777 YOUR_DOCKERHUB_USERNAME/world-of-games-scores:latest
+
+The image must be built before using the direct run command.
+If a Compose container with the same name already exists,
+stop and remove it before running the container directly.

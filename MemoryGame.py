@@ -1,58 +1,73 @@
+
 import random
 import time
-import os
-import sys
+
+from Utils import Screen_cleaner
 
 
 def generate_sequence(difficulty):
-    return [
-        random.randint(1, 101)
-        for _ in range(difficulty)
-    ]
+    """
+    Generate exactly difficulty random numbers.
 
+    Each number is between 1 and 101, inclusive.
+    Repeated numbers are allowed.
+    """
+    sequence = []
 
-def clear_screen():
-   
-    if os.name == "nt":
-        os.system("cls")
-    else:
-        sys.stdout.write("\033[2J\033[H")
-        sys.stdout.flush()
+    for _ in range(difficulty):
+        sequence.append(random.randint(1, 101))
+
+    return sequence
 
 
 def get_list_from_user(difficulty):
+    """
+    Collect exactly difficulty whole numbers.
+
+    The player enters numbers separated by spaces.
+    """
     while True:
-        value = input(
+        raw = input(
             f"Enter {difficulty} numbers separated by spaces: "
         ).strip()
 
-        parts = value.split()
+        parts = raw.split()
 
         if len(parts) != difficulty:
-            print(f"Please enter exactly {difficulty} numbers.")
+            print(
+                f"Please enter exactly {difficulty} numbers."
+            )
             continue
 
         try:
-            numbers = [int(part) for part in parts]
+            answer = [int(part) for part in parts]
+
         except ValueError:
-            print("Invalid input. All entries must be whole numbers.")
+            print(
+                "Invalid input. Please enter whole numbers "
+                "separated by spaces."
+            )
             continue
 
-        return numbers
+        return answer
 
 
-def is_list_equal(list1, list2):
-    return list1 == list2
+def is_list_equal(list_a, list_b):
+    """Return True only if both lists match in order."""
+    return list_a == list_b
 
 
 def play(difficulty):
+    """Play one Memory Game round."""
     sequence = generate_sequence(difficulty)
 
-    print("Memorize this sequence:")
+    print("\nMemorize this sequence:")
     print(sequence, flush=True)
 
     time.sleep(0.7)
-    clear_screen()
+
+    Screen_cleaner()
 
     answer = get_list_from_user(difficulty)
+
     return is_list_equal(sequence, answer)

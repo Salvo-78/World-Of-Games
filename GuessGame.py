@@ -1,38 +1,43 @@
+
 import random
-# from live import difficulty imports the difficulty variable from live.py
+
+
+def generate_number(difficulty):
+    """Generate a secret number between 1 and difficulty."""
+    secret_number = random.randint(1, difficulty)
+    return secret_number
+
 
 def get_guess_from_user(difficulty):
-# prompts the user for a guess between 1 and difficulty (inclusive), repeats the prompt with 'wrong selection' if the input is invalid.
-    
+    """Ask for a valid whole-number guess."""
     while True:
-        try:
-            guess_input = input(f"Enter your guess (1-{difficulty}): ").strip()
-            if not guess_input:
-                print("wrong selection")
-                continue
+        raw = input(
+            f"Guess a whole number from 1 to {difficulty}: "
+        ).strip()
 
-            guess = int(guess_input)
-            if guess < 1 or guess > difficulty:
-                print("wrong selection")
-                continue
-            return guess
+        try:
+            guess = int(raw)
         except ValueError:
-            print("wrong selection")
+            print("Invalid input. Please enter a whole number.")
+            continue
+
+        if 1 <= guess <= difficulty:
+            return guess
+
+        print(
+            f"Your guess must be between 1 and {difficulty}."
+        )
 
 
 def compare_results(guess, secret_number):
-# compares the user's guess with the secret number. returns True if they match, False otherwise.
-
+    """Return True if the guess matches the secret number."""
     return guess == secret_number
 
 
 def play(difficulty):
-# generates a secret number, gets one valid guess, compares them, and returns True (win) or False (loss).
-    
-    secret_number = random.randint(1, difficulty)
+    """Play one round and return True for a win, False for a loss."""
+    secret_number = generate_number(difficulty)
 
-    # collect exactly one valid guess (invalid attempts do not count)
     guess = get_guess_from_user(difficulty)
 
-    # compare and return the result
     return compare_results(guess, secret_number)

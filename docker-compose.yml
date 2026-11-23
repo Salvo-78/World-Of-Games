@@ -1,0 +1,10 @@
+services:
+  scores:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: salvo78/world-of-games-scores:latest
+    container_name: world-of-games-scores
+    ports:
+      - "8777:8777"
+    restart: unless-stopped

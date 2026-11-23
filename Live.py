@@ -1,6 +1,10 @@
+
 import GuessGame
 import MemoryGame
 import CurrencyRouletteGame
+
+from Score import add_score
+from Utils import BAD_RETURN_CODE
 
 
 def welcome(name):
@@ -10,12 +14,17 @@ def welcome(name):
     )
 
 
-def get_integer_input(prompt, minimum, maximum):
+def _read_integer(prompt, minimum, maximum):
+    """
+    Read a whole number within an inclusive range.
+
+    Invalid input is rejected and does not start a game.
+    """
     while True:
-        value = input(prompt).strip()
+        raw = input(prompt).strip()
 
         try:
-            number = int(value)
+            value = int(raw)
         except ValueError:
             print(
                 f"Invalid input. Please enter a whole number "
@@ -23,53 +32,83 @@ def get_integer_input(prompt, minimum, maximum):
             )
             continue
 
-        if not minimum <= number <= maximum:
-            print(
-                f"Out of range. Choose a number from "
-                f"{minimum} to {maximum}."
-            )
-            continue
+        if minimum <= value <= maximum:
+            return value
 
-        return number
+        print(
+            f"Out of range. Please enter a number "
+            f"from {minimum} to {maximum}."
+        )
 
 
 def load_game():
-    games = {
-        1: (
-            "Memory Game",
-            "Remember the displayed sequence of numbers.",
-            MemoryGame.play,
-        ),
-        2: (
-            "Guess Game",
-            "Guess the computer's secret number.",
-            GuessGame.play,
-        ),
-        3: (
-            "Currency Roulette",
-            "Estimate the ILS value of a USD amount.",
-            CurrencyRouletteGame.play,
-        ),
-    }
-
     print("\nPlease choose a game to play:")
-    for number, (name, description, _) in games.items():
-        print(f"{number}. {name} - {description}")
 
-    choice = get_integer_input("Game choice (1-3): ", 1, 3)
-    difficulty = get_integer_input(
-        "Please choose game difficulty from 1 to 5: ", 1, 5
+    print(
+        "1. Memory Game - Memorize a sequence displayed briefly "
+        "and recall it in order."
     )
 
+    print(
+        "2. Guess Game - Guess the computer's secret number."
+    )
+
+    print(
+        "3. Currency Roulette - Estimate the ILS value "
+        "of a random USD amount."
+    )
+
+    game_choice = _read_integer(
+        "Game choice (1-3): ",
+        1,
+        3
+    )
+
+    difficulty = _read_integer(
+        "Please choose game difficulty from 1 to 5: ",
+        1,
+        5
+    )
+
+    games = {
+        1: MemoryGame,
+        2: GuessGame,
+        3: CurrencyRouletteGame
+    }
+
+    selected_game = games[game_choice]
+
     try:
-        won = games[choice][2](difficulty)
-    except (KeyboardInterrupt, EOFError):
+        result = selected_game.play(difficulty)
+
+    except (EOFError, KeyboardInterrupt):
         print("\nGame cancelled.")
         return
 
-    if won is True:
-        print("Congratulations! You won!")
-    elif won is False:
-        print("Game over. You lost!")
+    # A cancelled Currency Roulette round is not a loss
+    # and must not be reported as a win.
+    if (
+        game_choice == 3
+        and CurrencyRouletteGame.round_cancelled
+    ):
+        print("The round was cancelled. No points were awarded.")
+        return
+
+    if result is True:
+        print("\nCongratulations! You won!")
+
+        score_result = add_score(difficulty)
+
+        if score_result == BAD_RETURN_CODE:
+            print(
+                "Your win was recorded, but the score "
+                "could not be saved."
+            )
+        else:
+            print(f"Your updated score is: {score_result}")
+
+    elif result is False:
+        print("\nYou lost. Better luck next time!")
+
     else:
-        print("Round cancelled. No win or loss was recorded.")
+        print("\nThe game ended without a valid result.")

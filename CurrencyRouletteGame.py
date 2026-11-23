@@ -1,3 +1,4 @@
+
 import random
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
@@ -5,44 +6,70 @@ import requests
 
 
 API_URL = "https://open.er-api.com/v6/latest/USD"
+REQUEST_TIMEOUT_SECONDS = 5
 CENT = Decimal("0.01")
+
+# True means the round was cancelled because a technical
+# problem prevented it from being completed.
+round_cancelled = False
+
+
+def generate_usd_amount():
+    """Generate a random USD amount between 1 and 100."""
+    return random.randint(1, 100)
 
 
 def get_exchange_rate():
+    """
+    Retrieve the current USD-to-ILS exchange rate.
+
+    Raises an exception if the API is unavailable or invalid.
+    """
+    response = requests.get(
+        API_URL,
+        timeout=REQUEST_TIMEOUT_SECONDS
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    if not isinstance(data, dict):
+        raise ValueError("Invalid API response.")
+
+    if data.get("result") != "success":
+        raise ValueError("The currency API returned an error.")
+
+    rates = data.get("rates")
+
+    if not isinstance(rates, dict):
+        raise ValueError("The API response does not contain rates.")
+
+    if "ILS" not in rates:
+        raise ValueError("The API response does not contain ILS.")
+
     try:
-        response = requests.get(API_URL, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-
-        if data.get("result") != "success":
-            raise ValueError("The currency API returned an unsuccessful result.")
-
-        rates = data.get("rates")
-        if not isinstance(rates, dict) or "ILS" not in rates:
-            raise ValueError("The API response does not contain the ILS rate.")
-
         rate = Decimal(str(rates["ILS"]))
 
-        if not rate.is_finite() or rate <= 0:
-            raise ValueError("The ILS exchange rate is invalid.")
+    except (InvalidOperation, TypeError, ValueError) as error:
+        raise ValueError("The ILS exchange rate is invalid.") from error
 
-        return rate
+    if not rate.is_finite() or rate <= 0:
+        raise ValueError("The ILS exchange rate is unusable.")
 
-    except (
-        requests.RequestException,
-        ValueError,
-        InvalidOperation,
-        TypeError,
-        KeyError,
-    ) as error:
-        print(f"Currency service error: {error}")
-        return None
+    return rate
 
 
-def get_money_interval(difficulty, usd_amount, exchange_rate):
-    correct_value = (
-        Decimal(usd_amount) * exchange_rate
-    ).quantize(CENT, rounding=ROUND_HALF_UP)
+def get_money_interval(difficulty, total):
+    """
+    Calculate the inclusive accepted interval.
+
+    total is the correct ILS value, rounded to two decimals.
+    """
+    correct_value = Decimal(str(total)).quantize(
+        CENT,
+        rounding=ROUND_HALF_UP
+    )
 
     tolerance = Decimal(5 - difficulty)
 
@@ -52,36 +79,90 @@ def get_money_interval(difficulty, usd_amount, exchange_rate):
     return lower, upper
 
 
-def get_guess_from_user(usd_amount):
+def get_guess_from_user(amount):
+    """Collect a valid non-negative decimal ILS guess."""
     while True:
-        value = input(
-            f"Estimate the ILS value of {usd_amount} USD: "
+        raw = input(
+            f"What is the ILS value of {amount} USD? "
         ).strip()
 
         try:
-            guess = Decimal(value)
-        except InvalidOperation:
-            print("Invalid input. Enter a non-negative decimal number.")
+            guess = Decimal(raw)
+
+        except (InvalidOperation, ValueError):
+            print(
+                "Invalid input. Enter a non-negative amount, "
+                "for example 36.50."
+            )
             continue
 
         if not guess.is_finite() or guess < 0:
-            print("Your estimate must be a finite, non-negative number.")
+            print("Please enter a non-negative amount.")
             continue
 
-        return guess
+        return guess.quantize(
+            CENT,
+            rounding=ROUND_HALF_UP
+        )
 
 
 def play(difficulty):
-    usd_amount = random.randint(1, 100)
+    """
+    Play one Currency Roulette round.
 
-    exchange_rate = get_exchange_rate()
-    if exchange_rate is None:
-        return None
+    Returns:
+        True  - player wins
+        False - player loses or the round is cancelled
 
-    lower, upper = get_money_interval(
-        difficulty, usd_amount, exchange_rate
+    Check round_cancelled to distinguish technical cancellation
+    from an ordinary loss.
+    """
+    global round_cancelled
+
+    round_cancelled = False
+
+    amount = generate_usd_amount()
+
+    try:
+        rate = get_exchange_rate()
+
+    except (
+        requests.RequestException,
+        ValueError,
+        TypeError,
+        InvalidOperation
+    ) as error:
+
+        print(
+            f"Currency Roulette could not retrieve "
+            f"the exchange rate: {error}"
+        )
+
+        print("The round has been cancelled.")
+
+        round_cancelled = True
+        return False
+
+    # Use the same exchange rate for the complete round.
+    correct_value = (
+        Decimal(amount) * rate
+    ).quantize(
+        CENT,
+        rounding=ROUND_HALF_UP
     )
 
-    guess = get_guess_from_user(usd_amount)
+    lower, upper = get_money_interval(
+        difficulty,
+        correct_value
+    )
+
+    try:
+        guess = get_guess_from_user(amount)
+
+    except (EOFError, KeyboardInterrupt):
+        print("\nThe round has been cancelled.")
+
+        round_cancelled = True
+        return False
 
     return lower <= guess <= upper
